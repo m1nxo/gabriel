@@ -1,3 +1,9 @@
+'''
+capture video frames from a camera, add text to each frame,
+encode them as JPEG images, encapsulate them in a Gabriel protocol format,
+and send them to the specified server for processing
+'''
+
 import argparse
 import common
 import cv2
@@ -17,19 +23,19 @@ COLOR = (255, 0, 0)
 def main():
     common.configure_logging()
     parser = argparse.ArgumentParser()
-    parser.add_argument('num_sources', type=int, nargs='?',
-                        default=DEFAULT_NUM_SOURCES)
-    parser.add_argument('server_host', nargs='?',
-                        default=common.DEFAULT_SERVER_HOST)
+    parser.add_argument('num_sources', type=int, nargs='?', default=DEFAULT_NUM_SOURCES)
+    parser.add_argument('server_host', nargs='?', default=common.DEFAULT_SERVER_HOST)
     args = parser.parse_args()
 
+    # initialize a video capture
     capture = cv2.VideoCapture(0)
+
     def gen_producer(n):
         text = 'client {}'.format(n)
         async def producer():
-            _, frame = capture.read()
-            cv2.putText(frame, text, ORG, FONT_FACE, FONT_SCALE, COLOR)
-            _, jpeg_frame=cv2.imencode('.jpg', frame)
+            _, frame = capture.read() # bring frame from camera
+            cv2.putText(frame, text, ORG, FONT_FACE, FONT_SCALE, COLOR) # adds text based on the source number
+            _, jpeg_frame=cv2.imencode('.jpg', frame) # incode frame to JPEG image
             input_frame = gabriel_pb2.InputFrame()
             input_frame.payload_type = gabriel_pb2.PayloadType.IMAGE
             input_frame.payloads.append(jpeg_frame.tobytes())
